@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Stepenice - Dvije Trake</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/style.css" />
+  <script src="/script.js" defer></script>
+</head>
+<body>
+  <div id="titleContainer">
+    <h1>Stepenice - Dvije Trake</h1>
+  </div>
+
+  <main>
+    <!-- EFECTS / WIPE -->
+    <div id="efektiPage" class="sectionBox">
+      <h2>Efekti &amp; Wipe</h2>
+
+      <div class="wipeRow">
+        <label>
+          <input type="checkbox" id="wipeAllCheckbox" />
+          Wipe All (In + Out)
+        </label>
+      </div>
+
+      <div class="rowBox">
+        <div style="flex:1;">
+          <label for="wipeSpeed" id="wipeSpeedLabel">Wipe Speed (ms):</label>
+          <input type="number" id="wipeSpeed" min="1" max="1000"/>
+        </div>
+        <div style="flex:1; margin-left:15px;">
+          <label for="onTime" id="onTimeLabel">OnTime (sekunde):</label>
+          <input type="number" id="onTime" min="1" max="3600"/>
+        </div>
+      </div>
+
+      <hr/>
+
+      <label for="effectSelect">Efekt:</label>
+      <select id="effectSelect">
+        <option value="0">Solid</option>
+        <option value="1">Confetti</option>
+        <option value="2">Rainbow</option>
+        <option value="3">Meteor</option>
+        <option value="4">FadeInOut</option>
+        <option value="5">Fire</option>
+        <option value="6">Lightning</option>
+      </select>
+
+      <div id="colorDiv">
+        <label for="effectColor">Boja (Samo Solid):</label>
+        <input type="color" id="effectColor" value="#ffffff"/>
+      </div>
+
+      <!-- Live Preview Container -->
+      <div id="effectPreviewContainer">
+        <label>Live Preview:</label>
+        <div id="effectPreview" class="effectPreview solidPreview"></div>
+      </div>
+    </div>
+
+    <!-- POSTAVKE -->
+    <div id="postavkePage" class="sectionBox hidden">
+      <h2>Postavke</h2>
+
+      <div class="rowBox">
+        <label style="flex:1;">
+          <input type="checkbox" id="enableLed1"/>
+          LED1
+        </label>
+        <label style="flex:1;">
+          <input type="checkbox" id="enableLed2"/>
+          LED2
+        </label>
+      </div>
+
+      <hr/>
+
+      <label for="installationType">Tip Instalacije:</label>
+      <select id="installationType">
+        <option value="linija">Linija</option>
+        <option value="stepenica">Stepenica</option>
+      </select>
+
+      <div id="linijaSettings">
+        <div class="rowBox">
+          <div style="flex:1;">
+            <label for="ledsUp">LEDs Up:</label>
+            <input type="number" id="ledsUp" min="1" max="3000"/>
+          </div>
+          <div style="flex:1; margin-left:15px;">
+            <label for="ledsDown">LEDs Down:</label>
+            <input type="number" id="ledsDown" min="1" max="3000"/>
+          </div>
+        </div>
+      </div>
+
+      <div id="stepenicaSettings" class="hidden">
+        <div class="rowBox">
+          <div style="flex:1;">
+            <label for="brojStepenica">Broj Stepenica:</label>
+            <input type="number" id="brojStepenica" min="1" max="100"/>
+          </div>
+          <div style="flex:1; margin-left:15px;">
+            <label for="brojLedicaPoStepenici">LED/Stepenici:</label>
+            <input type="number" id="brojLedicaPoStepenici" min="1" max="1000"/>
+          </div>
+        </div>
+
+        <hr/>
+        <label>Efekt Kreni Od:</label>
+        <label><input type="radio" name="efektKreniOd" id="efektKreniOd_sredina" value="sredina" checked/>Sredine</label>
+        <label><input type="radio" name="efektKreniOd" id="efektKreniOd_ruba" value="ruba" />Ruba</label>
+
+        <!-- Div za rotaciju, vidljiv samo ako je odabrano 'ruba' -->
+        <div id="rotDiv">
+          <label>
+            <input type="checkbox" id="rotacijaStepenica"/>
+            Rotacija svake druge za 180°
+          </label>
+        </div>
+
+        <hr/>
+        <label>Način Paljenja:</label>
+        <label><input type="radio" name="stepMode" id="stepMode_allAtOnce" value="allAtOnce" checked/>All At Once</label>
+        <label><input type="radio" name="stepMode" id="stepMode_sequence" value="sequence"/>Sekvenca</label>
+      </div>
+
+      <hr/>
+      <label for="maxCurrent">Max Current (mA):</label>
+      <input type="number" id="maxCurrent" min="100" max="20000"/>
+
+      <p class="note">Postavite vrijednost u mA.</p>
+    </div>
+
+    <!-- DAY/NIGHT -->
+    <div id="dayNightPage" class="sectionBox hidden">
+      <h2>Day/Night</h2>
+      <label for="dayStart">Dan počinje (HH:MM):</label>
+      <input type="time" id="dayStart"/>
+
+      <label for="dayEnd">Dan završava (HH:MM):</label>
+      <input type="time" id="dayEnd"/>
+
+      <div class="rowBox">
+        <label for="dayBr">
+          Day Brightness: <span id="dayBrVal">100</span>%
+        </label>
+        <input type="range" id="dayBr" min="0" max="100"/>
+      </div>
+      <div class="rowBox">
+        <label for="nightBr">
+          Night Brightness: <span id="nightBrVal">30</span>%
+        </label>
+        <input type="range" id="nightBr" min="0" max="100"/>
+      </div>
+    </div>
+  </main>
+
+  <button id="saveConfigButton">Save Settings</button>
+
+  <div id="popup" class="popupModal">
+    <div class="popup-content" id="popupContent">
+      <span class="close-button">&times;</span>
+      <p id="popupMsg"></p>
+    </div>
+  </div>
+
+  <nav>
+    <button id="efektiNavButton">Efekti</button>
+    <button id="postavkeNavButton">Postavke</button>
+    <button id="dayNightNavButton">Day/Night</button>
+  </nav>
+</body>
+</html>

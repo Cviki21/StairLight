@@ -1,0 +1,270 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* BODY: background from your background.png */
+body, html {
+  font-family: 'Roboto', sans-serif;
+  background: url('background.png') no-repeat center center fixed;
+  background-size: cover;
+  color: #d1d5db;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Title container & main  - max-width & centrirano */
+#titleContainer {
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: rgba(31,66,135,0.8);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+}
+#titleContainer h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.8em;
+  font-weight: 700;
+}
+
+main {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px 15px;
+  background-color: rgba(31, 66, 135, 0.8);
+  border-radius: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.sectionBox {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  color: #f9fafb;
+  text-align: left;
+}
+
+.sectionBox h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.sectionBox label {
+  display: block;
+  margin: 10px 0 5px;
+  font-size: 1em;
+  color: #e5e7eb;
+}
+
+.sectionBox input[type="number"],
+.sectionBox input[type="time"],
+.sectionBox input[type="range"],
+.sectionBox input[type="color"],
+.sectionBox select {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border-radius: 5px;
+  border: 1px solid #9ca3af;
+  background-color: rgba(255,255,255,0.8);
+  color: #111827;
+}
+
+.sectionBox input[type="range"] {
+  width: 80%;
+  margin: 0 auto 12px auto;
+  display: block;
+}
+
+.note {
+  font-size: 0.9em;
+  color: #9ca3af;
+  margin-top: -2px;
+  margin-bottom: 10px;
+}
+
+.wipeRow {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+
+#saveConfigButton {
+  display: block;
+  margin: 0 auto 60px auto; /* gore i dolje 0/60px, a lijevo/desno auto */
+  background-color: #4CAF50;
+  color: #ffffff;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease;
+}
+
+#saveConfigButton:hover {
+  background-color: #45a049;
+}
+
+/* Navigacija na dnu */
+nav {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%;
+  background-color: rgba(31,66,135,0.9);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+}
+
+nav button {
+  background: none;
+  border: none;
+  color: #e8e8ff;
+  font-size: 1.2em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+nav button:hover {
+  color: #ffffff;
+}
+
+/* Popup */
+.popupModal {
+  display: none;
+  position: fixed;
+  z-index: 10;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(0,0,0,0.5);
+}
+
+.popup-content {
+  background-color: rgba(31,66,135,0.95);
+  margin: 15% auto;
+  padding: 20px;
+  border: 2px solid #5c51cf;
+  width: 80%;
+  max-width: 400px;
+  border-radius: 10px;
+  color: #ffffff;
+  position: relative;
+}
+
+.close-button {
+  color: #e5e7eb;
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: #ffffff;
+}
+
+#popupMsg {
+  margin-top: 20px;
+  font-size: 1.1em;
+}
+
+/* EFECT PREVIEW */
+.effectPreview {
+  width: 100%;
+  height: 50px;
+  margin-top: 10px;
+  border-radius: 5px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.solidPreview {
+  background-color: #ffffff;
+}
+.confettiPreview {
+  background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);
+  background-size: 400% 400%;
+  animation: confettiAnim 5s infinite;
+}
+.rainbowPreview {
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+}
+.meteorPreview {
+  background: linear-gradient(to right, transparent, yellow, transparent);
+  background-size: 200% 100%;
+  animation: meteorAnim 2s linear infinite;
+}
+.fadeInOutPreview {
+  background-color: #ff69b4;
+  animation: fadeInOut 3s infinite;
+}
+.firePreview {
+  background: linear-gradient(to top, #ff4500, #ff8c00, #ffd700);
+  animation: fireAnim 1s infinite;
+}
+.lightningPreview {
+  background: linear-gradient(to bottom, #ffffff, #ffff00, #ffffff);
+  background-size: 100% 200%;
+  animation: lightningAnim 0.5s infinite;
+}
+
+/* Animations */
+@keyframes confettiAnim {
+  0% { background-position: 0% 50%; }
+  50%{ background-position:100% 50%; }
+  100%{ background-position:0% 50%; }
+}
+@keyframes meteorAnim {
+  0%{ background-position:-200% 0; }
+  100%{ background-position:200% 0; }
+}
+@keyframes fadeInOut {
+  0%,100%{ opacity:0.2; }
+  50%{ opacity:1; }
+}
+@keyframes fireAnim {
+  0%{ background-position:0% 50%; }
+  50%{ background-position:100% 50%; }
+  100%{ background-position:0% 50%; }
+}
+@keyframes lightningAnim {
+  0%{ background-position:0% 0%; }
+  50%{ background-position:0% 100%; }
+  100%{ background-position:0% 0%; }
+}
+
+/* Responsivno */
+@media (max-width:600px){
+  #titleContainer {
+    margin: 10px auto;
+    padding: 10px;
+  }
+  main {
+    margin: 10px auto;
+    padding: 15px 10px;
+  }
+  .sectionBox {
+    padding: 10px;
+  }
+  nav button {
+    font-size: 1em;
+  }
+}
