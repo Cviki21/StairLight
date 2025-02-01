@@ -50,43 +50,39 @@ WebServer server(80);
 #define IR4_PIN 19
 #define PUSH_BUTTON_PIN 15
 
-// LED pinovi
+// LED
 #define LED_PIN_UP   5
 #define LED_PIN_DOWN 4
-
-// Omogućeno / onemogućeno
-bool gEnableLed1 = true;
-bool gEnableLed2 = true;
-
-// Struja i LED
-int gMaxCurrent = 2000;
-int gNumLedsUp  = 300;
-int gNumLedsDown= 300;
-CRGB* ledsUp    = nullptr;
-CRGB* ledsDown  = nullptr;
+bool   gEnableLed1 = true;
+bool   gEnableLed2 = true;
+int    gMaxCurrent  = 2000;
+int    gNumLedsUp   = 300;
+int    gNumLedsDown = 300;
+CRGB*  ledsUp       = nullptr;
+CRGB*  ledsDown     = nullptr;
 
 // Stepenice
-int gBrojStepenica          = 3;
-int gBrojLedicaPoStepenici  = 30;
-int gTotalLedsStepenice     = 0;
-StepSegment* stepsArray     = nullptr;
+int    gBrojStepenica         = 3;
+int    gBrojLedicaPoStepenici = 30;
+int    gTotalLedsStepenice    = 0;
+StepSegment* stepsArray       = nullptr;
 
 String gInstallationType = "linija";
 String gEfektKreniOd     = "sredina";
 bool   gRotacijaStepenica= false;
 String gStepeniceMode    = "allAtOnce";
 
-// Efekt / Wipe
-uint8_t  gEffect      = 0;
-bool     gWipeAll     = false;
-uint16_t gOnTimeSec   = 60;
+// Efekti
+uint8_t  gEffect    = 0;
+bool     gWipeAll   = false;
+uint16_t gOnTimeSec = 60;
 
-// Ovdje odvajamo WipeIn i WipeOut (sporiji gašenje)
+// RAZDVOJENE BRZINE
 uint16_t gWipeInSpeedMs  = 15;
-uint16_t gWipeOutSpeedMs = 100;
+uint16_t gWipeOutSpeedMs = 80;
 
 // Boja
-uint8_t gColorR = 255, gColorG = 255, gColorB = 255;
+uint8_t gColorR=255, gColorG=255, gColorB=255;
 
 // Day/Night
 String gDayStartStr   = "08:00";
@@ -94,30 +90,29 @@ String gDayEndStr     = "20:00";
 int gDayBrightnessPercent   = 100;
 int gNightBrightnessPercent = 30;
 
-// Button
-bool         gManualOnOff        = false;
-bool         gLastButtonState     = HIGH;
+// Ostalo
+bool gManualOnOff          = false;
+bool gLastButtonState       = HIGH;
 unsigned long gLastButtonDebounce = 0;
 const unsigned long BTN_DEBOUNCE_MS = 250;
 
-// Track linije
 Track trackUp;
 Track trackDown;
 unsigned long gIrLast[4] = {0,0,0,0};
 const unsigned long IR_DEBOUNCE = 300;
 
-// Efekt varijable
+// Za efekte
 static uint8_t sHueUp=0, sHueDown=0;
 static uint16_t sMetUp=0, sMetDown=0;
 static int sFadeValUp=0, sFadeDirUp=1;
 static int sFadeValDown=0, sFadeDirDown=1;
 
-// Stepenica sekvenca
-static bool  seqActive      = false;
-static bool  seqForward     = true;
-static int   seqState       = 0;
-static int   seqCurrentStep = 0;
-static unsigned long seqWaitStart = 0;
+// Sekvenca
+static bool  seqActive       = false;
+static bool  seqForward      = true;
+static int   seqState        = 0;
+static int   seqCurrentStep  = 0;
+static unsigned long seqWaitStart=0;
 
 // ====================================================================
 // WIFI
@@ -132,23 +127,21 @@ void setupWiFi() {
 // ====================================================================
 void loadPreferences() {
   preferences.begin("stairs", true);
-  gNumLedsUp   = preferences.getInt("ledsUp", 300);
-  gNumLedsDown = preferences.getInt("ledsDown", 300);
-  gMaxCurrent  = preferences.getInt("maxCur", 2000);
-  gEffect      = preferences.getUChar("effect", 0);
-  gWipeAll     = preferences.getBool("wipeAll", false);
 
-  // "speed" učitavamo kao WipeInSpeed; WipeOutSpeed ćemo ručno postaviti:
+  gNumLedsUp    = preferences.getInt("ledsUp", 300);
+  gNumLedsDown  = preferences.getInt("ledsDown", 300);
+  gMaxCurrent   = preferences.getInt("maxCur", 2000);
+  gEffect       = preferences.getUChar("effect", 0);
+  gWipeAll      = preferences.getBool("wipeAll", false);
   uint16_t oldSpeed = preferences.getUInt("speed", 15);
   gWipeInSpeedMs  = oldSpeed;
-  gWipeOutSpeedMs = 80; // sporije gašenje za vidljiv efekt
-
+  gWipeOutSpeedMs = 80; 
   gOnTimeSec    = preferences.getUInt("onTime", 60);
 
   uint32_t col  = preferences.getUInt("color", 0xFFFFFF);
-  gColorR       = (col >> 16) & 0xFF;
-  gColorG       = (col >>  8) & 0xFF;
-  gColorB       = (col      ) & 0xFF;
+  gColorR = (col >> 16) & 0xFF;
+  gColorG = (col >>  8) & 0xFF;
+  gColorB = (col      ) & 0xFF;
 
   gInstallationType      = preferences.getString("instType", "linija");
   gBrojStepenica         = preferences.getInt("stepCount", 3);
@@ -170,13 +163,14 @@ void loadPreferences() {
 
 void savePreferences() {
   preferences.begin("stairs", false);
+
   preferences.putInt("ledsUp", gNumLedsUp);
   preferences.putInt("ledsDown", gNumLedsDown);
   preferences.putInt("maxCur", gMaxCurrent);
   preferences.putUChar("effect", gEffect);
   preferences.putBool("wipeAll", gWipeAll);
 
-  // Čuvamo "speed" kao WipeIn
+  // i dalje spašavamo speed = WipeIn
   preferences.putUInt("speed", gWipeInSpeedMs);
   preferences.putUInt("onTime", gOnTimeSec);
 
@@ -219,7 +213,7 @@ bool handleFileRead(String path) {
 
 void handleNotFound() {
   if (!handleFileRead(server.uri())) {
-    server.send(404, "text/plain", "Not found");
+    server.send(404,"text/plain","Not found");
   }
 }
 
@@ -227,7 +221,7 @@ void handleNotFound() {
 // TIME, DAY/NIGHT
 // ====================================================================
 void setupTime() {
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  configTime(0,0,"pool.ntp.org","time.nist.gov");
 }
 
 uint8_t parseHour(const String& hhmm) {
@@ -245,23 +239,22 @@ uint8_t parseMin(const String& hhmm) {
 uint8_t getDayNightBrightness() {
   struct tm tinfo;
   if (!getLocalTime(&tinfo)) {
-    return map(gDayBrightnessPercent, 0, 100, 0, 255);
+    return map(gDayBrightnessPercent,0,100,0,255);
   }
-  int cur = tinfo.tm_hour * 60 + tinfo.tm_min;
-  int ds = parseHour(gDayStartStr) * 60 + parseMin(gDayStartStr);
-  int de = parseHour(gDayEndStr)   * 60 + parseMin(gDayEndStr);
-
+  int cur = tinfo.tm_hour*60 + tinfo.tm_min;
+  int ds  = parseHour(gDayStartStr)*60 + parseMin(gDayStartStr);
+  int de  = parseHour(gDayEndStr)*60   + parseMin(gDayEndStr);
   if (ds < de) {
     if (cur >= ds && cur < de) {
-      return map(gDayBrightnessPercent, 0, 100, 0, 255);
+      return map(gDayBrightnessPercent,0,100,0,255);
     } else {
-      return map(gNightBrightnessPercent, 0, 100, 0, 255);
+      return map(gNightBrightnessPercent,0,100,0,255);
     }
   } else {
     if (cur >= ds || cur < de) {
-      return map(gDayBrightnessPercent, 0, 100, 0, 255);
+      return map(gDayBrightnessPercent,0,100,0,255);
     } else {
-      return map(gNightBrightnessPercent, 0, 100, 0, 255);
+      return map(gNightBrightnessPercent,0,100,0,255);
     }
   }
 }
@@ -271,28 +264,28 @@ uint8_t getDayNightBrightness() {
 // ====================================================================
 void handlePushButton() {
   bool reading = digitalRead(PUSH_BUTTON_PIN);
-  if (reading != gLastButtonState && (millis() - gLastButtonDebounce > BTN_DEBOUNCE_MS)) {
+  if (reading != gLastButtonState && (millis()-gLastButtonDebounce>BTN_DEBOUNCE_MS)) {
     gLastButtonDebounce = millis();
-    gLastButtonState = reading;
-    if (reading == LOW) {
+    gLastButtonState    = reading;
+    if (reading==LOW) {
       gManualOnOff = !gManualOnOff;
-      if (!gManualOnOff) {
-        trackUp.state   = TrackState::OFF;
-        trackDown.state = TrackState::OFF;
-        if (stepsArray) {
-          for (int i = 0; i < gBrojStepenica; i++) {
-            stepsArray[i].state = TrackState::OFF;
+      if(!gManualOnOff) {
+        trackUp.state=TrackState::OFF;
+        trackDown.state=TrackState::OFF;
+        if(stepsArray){
+          for(int i=0;i<gBrojStepenica;i++){
+            stepsArray[i].state=TrackState::OFF;
           }
         }
         if (ledsUp) {
-          for (int i = 0; i < gNumLedsUp; i++)   ledsUp[i]   = CRGB::Black;
+          for(int i=0;i<gNumLedsUp;i++) ledsUp[i]=CRGB::Black;
         }
         if (ledsDown) {
-          for (int i = 0; i < gNumLedsDown; i++) ledsDown[i] = CRGB::Black;
+          for(int i=0;i<gNumLedsDown;i++) ledsDown[i]=CRGB::Black;
         }
-        if (gInstallationType == "stepenica" && ledsUp) {
-          for (int i = 0; i < gTotalLedsStepenice; i++) {
-            ledsUp[i] = CRGB::Black;
+        if(gInstallationType=="stepenica" && ledsUp){
+          for(int i=0;i<gTotalLedsStepenice;i++){
+            ledsUp[i]=CRGB::Black;
           }
         }
         FastLED.show();
@@ -304,426 +297,429 @@ void handlePushButton() {
 // ====================================================================
 // EFEKTI
 // ====================================================================
-void doSolid(CRGB* arr, int count, uint8_t r, uint8_t g, uint8_t b) {
-  for (int i = 0; i < count; i++) {
-    arr[i] = CRGB(r, g, b);
+void doSolid(CRGB* arr,int count,uint8_t r,uint8_t g,uint8_t b){
+  for(int i=0;i<count;i++){
+    arr[i]=CRGB(r,g,b);
   }
 }
 
-void applyGlobalEffect(CRGB* arr, int count, bool isUp) {
-  if (gEffect == 0) {
-    doSolid(arr, count, gColorR, gColorG, gColorB);
+void applyGlobalEffect(CRGB* arr,int count,bool isUp){
+  if(gEffect==0){
+    doSolid(arr,count,gColorR,gColorG,gColorB);
     return;
   }
-  switch (gEffect) {
-    case 1: {
-      for (int i = 0; i < count; i++) {
+  switch(gEffect){
+    case 1:{ 
+      for(int i=0;i<count;i++){
         arr[i].nscale8(200);
       }
-      arr[random(count)] = CHSV(random8(), 200, 255);
+      arr[random(count)] = CHSV(random8(),200,255);
     } break;
-    case 2: {
-      for (int i = 0; i < count; i++) {
-        if (isUp) arr[i] = CHSV(sHueUp + i*2, 255, 255);
-        else      arr[i] = CHSV(sHueDown + i*2, 255, 255);
+    case 2:{
+      for(int i=0;i<count;i++){
+        if(isUp) arr[i]=CHSV(sHueUp + i*2,255,255);
+        else     arr[i]=CHSV(sHueDown + i*2,255,255);
       }
-      if (isUp) sHueUp++;
-      else      sHueDown++;
+      if(isUp) sHueUp++; else sHueDown++;
     } break;
-    case 3: {
-      for (int i = 0; i < count; i++) {
+    case 3:{
+      for(int i=0;i<count;i++){
         arr[i].fadeToBlackBy(40);
       }
-      if (isUp) {
-        arr[sMetUp] = CHSV(30, 255, 255);
-        sMetUp++;
-        if (sMetUp >= count) sMetUp = 0;
+      if(isUp){
+        arr[sMetUp]=CHSV(30,255,255);
+        sMetUp++; if(sMetUp>=count) sMetUp=0;
       } else {
-        arr[sMetDown] = CHSV(180, 255, 255);
-        sMetDown++;
-        if (sMetDown >= count) sMetDown = 0;
+        arr[sMetDown]=CHSV(180,255,255);
+        sMetDown++; if(sMetDown>=count) sMetDown=0;
       }
     } break;
-    case 4: {
-      if (isUp) {
-        sFadeValUp += (5 * sFadeDirUp);
-        if (sFadeValUp > 255) { sFadeValUp = 255; sFadeDirUp = -1; }
-        if (sFadeValUp < 0)   { sFadeValUp = 0;   sFadeDirUp = 1; }
-        CRGB c = CHSV(160, 200, 255);
+    case 4:{
+      if(isUp){
+        sFadeValUp += (5*sFadeDirUp);
+        if(sFadeValUp>255){ sFadeValUp=255; sFadeDirUp=-1; }
+        if(sFadeValUp<0)  { sFadeValUp=0;   sFadeDirUp=1; }
+        CRGB c=CHSV(160,200,255);
         c.nscale8_video((uint8_t)sFadeValUp);
-        for (int i = 0; i < count; i++) arr[i] = c;
+        for(int i=0;i<count;i++) arr[i]=c;
       } else {
-        sFadeValDown += (5 * sFadeDirDown);
-        if (sFadeValDown > 255) { sFadeValDown = 255; sFadeDirDown=-1; }
-        if (sFadeValDown < 0)   { sFadeValDown = 0;   sFadeDirDown=1; }
-        CRGB c = CHSV(60, 200, 255);
+        sFadeValDown += (5*sFadeDirDown);
+        if(sFadeValDown>255){ sFadeValDown=255; sFadeDirDown=-1;}
+        if(sFadeValDown<0)  { sFadeValDown=0;   sFadeDirDown=1;}
+        CRGB c=CHSV(60,200,255);
         c.nscale8_video((uint8_t)sFadeValDown);
-        for (int i = 0; i < count; i++) arr[i] = c;
+        for(int i=0;i<count;i++) arr[i]=c;
       }
     } break;
-    case 5: {
-      for (int i = 0; i < count; i++) {
-        uint8_t rr = random(150,256);
-        uint8_t gg = random(0,100);
-        arr[i] = CRGB(rr, gg, 0);
+    case 5:{
+      for(int i=0;i<count;i++){
+        uint8_t rr=random(150,256);
+        uint8_t gg=random(0,100);
+        arr[i]=CRGB(rr,gg,0);
       }
     } break;
-    case 6: {
-      for (int i = 0; i < count; i++) {
-        arr[i] = CRGB::Black;
+    case 6:{
+      for(int i=0;i<count;i++){
+        arr[i]=CRGB::Black;
       }
       int flashes = random(2,4);
-      for (int f=0; f<flashes; f++){
+      for(int f=0; f<flashes; f++){
         int start = random(count);
-        int length = random(10,30);
-        for (int i=0;i<length && (start+i)<count;i++){
-          arr[start+i] = CRGB::White;
+        int length= random(10,30);
+        for(int i=0;i<length && (start+i)<count;i++){
+          arr[start+i]=CRGB::White;
         }
         FastLED.show();
         delay(random(30,80));
-        for (int i=0;i<length && (start+i)<count;i++){
-          arr[start+i] = CRGB::Black;
+        for(int i=0;i<length && (start+i)<count;i++){
+          arr[start+i]=CRGB::Black;
         }
         FastLED.show();
         delay(random(60,150));
       }
     } break;
-    default: {
-      doSolid(arr, count, gColorR, gColorG, gColorB);
+    default:{
+      doSolid(arr,count,gColorR,gColorG,gColorB);
     } break;
   }
 }
 
 // ====================================================================
-// LINIJA (WIPE_IN / EFFECT / WIPE_OUT)
+// LINIJA NACIN
 // ====================================================================
-void updateWipeIn_line(Track& trk, CRGB* arr, int count, bool isUp) {
-  unsigned long now = millis();
-  if (now - trk.lastUpdate < gWipeInSpeedMs) return;
+void updateWipeIn_line(Track& trk,CRGB* arr,int count,bool isUp){
+  unsigned long now=millis();
+  if(now - trk.lastUpdate<gWipeInSpeedMs) return;
   trk.lastUpdate += gWipeInSpeedMs;
 
   CRGB wipeColor;
-  if (gEffect == 0) {
-    wipeColor = CRGB(gColorR, gColorG, gColorB);
-  } else {
-    wipeColor = CHSV(isUp ? sHueUp : sHueDown, 255, 255);
-    if (isUp) sHueUp++;
-    else      sHueDown++;
+  if(gEffect==0) wipeColor=CRGB(gColorR,gColorG,gColorB);
+  else {
+    wipeColor=CHSV(isUp?sHueUp:sHueDown,255,255);
+    if(isUp) sHueUp++; else sHueDown++;
   }
-  int idx = trk.reverse ? (count - 1 - trk.step) : trk.step;
-  if (idx >= 0 && idx < count) {
-    arr[idx] = wipeColor;
+  int idx= trk.reverse? (count-1 - trk.step) : trk.step;
+  if(idx>=0 && idx<count){
+    arr[idx]=wipeColor;
     trk.step++;
   } else {
-    trk.state = TrackState::EFFECT;
-    trk.effectStartTime = now;
+    trk.state=TrackState::EFFECT;
+    trk.effectStartTime= now;
   }
 }
 
-void updateEffect_line(Track& trk) {
-  unsigned long now = millis();
-  if (now - trk.effectStartTime >= (gOnTimeSec * 1000UL)) {
-    if (gWipeAll) {
-      trk.state       = TrackState::WIPE_OUT;
-      trk.lastUpdate  = now;
-      trk.step        = 0;
+void updateEffect_line(Track& trk){
+  unsigned long now=millis();
+  if((now - trk.effectStartTime)>=(gOnTimeSec*1000UL)){
+    if(gWipeAll){
+      trk.state=TrackState::WIPE_OUT;
+      trk.lastUpdate= now;
+      trk.step=0;
     } else {
-      trk.state       = TrackState::OFF;
+      trk.state=TrackState::OFF;
     }
   }
 }
 
-void updateWipeOut_line(Track& trk, CRGB* arr, int count) {
-  unsigned long now = millis();
-  if (now - trk.lastUpdate < gWipeOutSpeedMs) return;
+void updateWipeOut_line(Track& trk,CRGB* arr,int count){
+  unsigned long now=millis();
+  if(now - trk.lastUpdate<gWipeOutSpeedMs) return;
   trk.lastUpdate += gWipeOutSpeedMs;
 
-  int idx = trk.reverse ? trk.step : (count - 1 - trk.step);
-  if (idx >= 0 && idx < count) {
-    arr[idx] = CRGB::Black;
+  int idx= trk.reverse? trk.step : (count-1 - trk.step);
+  if(idx>=0 && idx<count){
+    arr[idx]=CRGB::Black;
     trk.step++;
   } else {
-    trk.state = TrackState::OFF;
+    trk.state=TrackState::OFF;
   }
 }
 
-void updateTrack_line(Track& trk, CRGB* arr, int count, bool isUp) {
-  switch(trk.state) {
+void updateTrack_line(Track& trk,CRGB* arr,int count,bool isUp){
+  switch(trk.state){
     case TrackState::OFF: 
       break;
     case TrackState::WIPE_IN:
-      updateWipeIn_line(trk, arr, count, isUp);
+      updateWipeIn_line(trk,arr,count,isUp);
       break;
     case TrackState::EFFECT:
-      applyGlobalEffect(arr, count, isUp);
+      applyGlobalEffect(arr,count,isUp);
       updateEffect_line(trk);
       break;
     case TrackState::WIPE_OUT:
-      updateWipeOut_line(trk, arr, count);
+      updateWipeOut_line(trk,arr,count);
       break;
   }
 }
 
 // ====================================================================
-// STEPENICE
+// STEPENICA
 // ====================================================================
-void initStepSegments() {
-  gTotalLedsStepenice = gBrojStepenica * gBrojLedicaPoStepenici;
-  if (stepsArray) { delete[] stepsArray; stepsArray = nullptr; }
-  stepsArray = new StepSegment[gBrojStepenica];
-
-  for (int i=0; i<gBrojStepenica; i++){
-    stepsArray[i].state = TrackState::OFF;
-    bool rev = false;
-    if (gEfektKreniOd=="ruba" && gRotacijaStepenica && (i%2==1)) rev = true;
-    stepsArray[i].reverse = rev;
-    stepsArray[i].lastUpdate = 0;
-    stepsArray[i].step = 0;
-    stepsArray[i].effectStartTime = 0;
-    stepsArray[i].indexStart = i*gBrojLedicaPoStepenici;
-    stepsArray[i].indexCount = gBrojLedicaPoStepenici;
+void initStepSegments(){
+  gTotalLedsStepenice = gBrojStepenica*gBrojLedicaPoStepenici;
+  if(stepsArray){delete[] stepsArray; stepsArray=nullptr;}
+  stepsArray= new StepSegment[gBrojStepenica];
+  for(int i=0;i<gBrojStepenica;i++){
+    stepsArray[i].state=TrackState::OFF;
+    bool rev=false;
+    if(gEfektKreniOd=="ruba" && gRotacijaStepenica && (i%2==1)) rev=true;
+    stepsArray[i].reverse=rev;
+    stepsArray[i].lastUpdate=0;
+    stepsArray[i].step=0;
+    stepsArray[i].effectStartTime=0;
+    stepsArray[i].indexStart= i*gBrojLedicaPoStepenici;
+    stepsArray[i].indexCount= gBrojLedicaPoStepenici;
   }
-  if (ledsUp) { delete[] ledsUp; ledsUp=nullptr; }
-  ledsUp = new CRGB[gTotalLedsStepenice];
-  FastLED.addLeds<WS2812B, LED_PIN_UP, GRB>(ledsUp, gTotalLedsStepenice);
+  if(ledsUp){delete[] ledsUp; ledsUp=nullptr;}
+  ledsUp= new CRGB[gTotalLedsStepenice];
+  FastLED.addLeds<WS2812B,LED_PIN_UP,GRB>(ledsUp,gTotalLedsStepenice);
   FastLED.clear(true);
 }
 
-void updateWipeIn_step(StepSegment& seg, CRGB* arr) {
-  unsigned long now = millis();
-  if (now - seg.lastUpdate < gWipeInSpeedMs) return;
-  seg.lastUpdate += gWipeInSpeedMs;
+void updateWipeIn_step(StepSegment& seg,CRGB* arr){
+  unsigned long now=millis();
+  if(now - seg.lastUpdate<gWipeInSpeedMs) return;
+  seg.lastUpdate+= gWipeInSpeedMs;
 
-  CRGB wipeColor = CRGB(gColorR, gColorG, gColorB);
-  if (gEffect != 0) {
-    wipeColor = CHSV(sHueUp, 255, 255);
+  CRGB wipeColor= CRGB(gColorR,gColorG,gColorB);
+  if(gEffect!=0){
+    wipeColor= CHSV(sHueUp,255,255);
     sHueUp++;
   }
-  if (gEfektKreniOd=="sredina") {
+  if(gEfektKreniOd=="sredina"){
     int mid = seg.indexCount/2;
-    int leftIndex  = mid - seg.step -1;
-    int rightIndex = mid + seg.step;
-    if (leftIndex >= 0) arr[seg.indexStart + leftIndex] = wipeColor;
-    if (rightIndex< seg.indexCount) arr[seg.indexStart + rightIndex] = wipeColor;
+    int leftIndex = mid - seg.step -1;
+    int rightIndex= mid + seg.step;
+    if(leftIndex>=0) arr[seg.indexStart + leftIndex]= wipeColor;
+    if(rightIndex< seg.indexCount) arr[seg.indexStart + rightIndex]= wipeColor;
     seg.step++;
-    if (leftIndex<0 && rightIndex>=seg.indexCount) {
-      seg.state = TrackState::EFFECT;
-      seg.effectStartTime = now;
+    if(leftIndex<0 && rightIndex>=seg.indexCount){
+      seg.state=TrackState::EFFECT;
+      seg.effectStartTime= now;
     }
   } else {
-    int idx = seg.reverse ? (seg.indexCount-1 - seg.step) : seg.step;
-    if (idx>=0 && idx<seg.indexCount) {
-      arr[seg.indexStart + idx] = wipeColor;
+    int idx= seg.reverse? (seg.indexCount-1 - seg.step) : seg.step;
+    if(idx>=0 && idx< seg.indexCount){
+      arr[seg.indexStart + idx]= wipeColor;
       seg.step++;
     } else {
-      seg.state = TrackState::EFFECT;
-      seg.effectStartTime = now;
+      seg.state= TrackState::EFFECT;
+      seg.effectStartTime= now;
     }
   }
 }
 
-void updateEffect_step(StepSegment& seg) {
-  unsigned long now = millis();
-  if ((now - seg.effectStartTime) >= (gOnTimeSec*1000UL)) {
-    if (gWipeAll) {
-      seg.state      = TrackState::WIPE_OUT;
-      seg.lastUpdate = now;
-      seg.step       = 0;
+// *******
+// U "sequence" modu, nećemo automatski prelaziti u WIPE_OUT nakon onTimeSec.
+// Tu logiku će odrađivati "updateSequence()" sama, da ne bi nepotrebno "ubila" ostale stepenice.
+// *******
+void updateEffect_step(StepSegment& seg){
+  if(gStepeniceMode=="sequence"){
+    // U sekvencijskom modu SKIP automatski prelazak u wipeOut/Off
+    // jer to radi "updateSequence()" za sve odjednom.
+    return;
+  }
+  // Ako NIJE sequence, radi normalnu logiku:
+  unsigned long now=millis();
+  if((now - seg.effectStartTime)>=(gOnTimeSec*1000UL)){
+    if(gWipeAll){
+      seg.state=TrackState::WIPE_OUT;
+      seg.lastUpdate= now;
+      seg.step=0;
     } else {
-      seg.state      = TrackState::OFF;
+      seg.state=TrackState::OFF;
     }
   }
 }
 
-void updateWipeOut_step(StepSegment& seg, CRGB* arr) {
-  unsigned long now = millis();
-  if (now - seg.lastUpdate < gWipeOutSpeedMs) return;
+void updateWipeOut_step(StepSegment& seg,CRGB* arr){
+  unsigned long now=millis();
+  if(now - seg.lastUpdate< gWipeOutSpeedMs) return;
   seg.lastUpdate += gWipeOutSpeedMs;
 
-  if (gEfektKreniOd=="sredina") {
-    int mid = seg.indexCount/2;
-    int leftIndex  = mid - seg.step -1;
-    int rightIndex = mid + seg.step;
-    if (leftIndex >= 0) arr[seg.indexStart + leftIndex] = CRGB::Black;
-    if (rightIndex< seg.indexCount) arr[seg.indexStart + rightIndex] = CRGB::Black;
+  if(gEfektKreniOd=="sredina"){
+    int mid= seg.indexCount/2;
+    int leftIndex= mid - seg.step -1;
+    int rightIndex= mid + seg.step;
+    if(leftIndex>=0) arr[seg.indexStart + leftIndex]= CRGB::Black;
+    if(rightIndex< seg.indexCount) arr[seg.indexStart + rightIndex]= CRGB::Black;
     seg.step++;
-    if (leftIndex<0 && rightIndex>=seg.indexCount) {
-      seg.state = TrackState::OFF;
+    if(leftIndex<0 && rightIndex>= seg.indexCount){
+      seg.state=TrackState::OFF;
     }
   } else {
-    int idx = seg.reverse ? seg.step : (seg.indexCount-1 - seg.step);
-    if (idx>=0 && idx<seg.indexCount) {
-      arr[seg.indexStart + idx] = CRGB::Black;
+    int idx= seg.reverse? seg.step : (seg.indexCount-1 - seg.step);
+    if(idx>=0 && idx< seg.indexCount){
+      arr[seg.indexStart + idx]= CRGB::Black;
       seg.step++;
     } else {
-      seg.state = TrackState::OFF;
+      seg.state= TrackState::OFF;
     }
   }
 }
 
-void applyEffectSegment(StepSegment& seg, CRGB* arr) {
-  int start = seg.indexStart;
-  int count = seg.indexCount;
-  if (gEffect == 0) {
-    for(int i=0; i<count; i++){
-      arr[start + i] = CRGB(gColorR,gColorG,gColorB);
+void applyEffectSegment(StepSegment& seg,CRGB* arr){
+  int start= seg.indexStart;
+  int count= seg.indexCount;
+  if(gEffect==0){
+    for(int i=0;i<count;i++){
+      arr[start+i]= CRGB(gColorR,gColorG,gColorB);
     }
   } else {
     static CRGB temp[2048];
-    if (count>2048) return;
-    for(int i=0; i<count; i++){
-      temp[i] = CRGB::Black;
+    if(count>2048) return;
+    for(int i=0;i<count;i++){
+      temp[i]=CRGB::Black;
     }
-    applyGlobalEffect(temp, count, true);
-    for(int i=0; i<count; i++){
-      arr[start + i] = temp[i];
+    applyGlobalEffect(temp,count,true);
+    for(int i=0;i<count;i++){
+      arr[start+i]= temp[i];
     }
   }
 }
 
-void updateSegment(StepSegment& seg, CRGB* arr) {
-  switch(seg.state) {
+void updateSegment(StepSegment& seg,CRGB* arr){
+  switch(seg.state){
     case TrackState::OFF:
       break;
     case TrackState::WIPE_IN:
-      updateWipeIn_step(seg, arr);
+      updateWipeIn_step(seg,arr);
       break;
     case TrackState::EFFECT:
-      applyEffectSegment(seg, arr);
+      applyEffectSegment(seg,arr);
       updateEffect_step(seg);
       break;
     case TrackState::WIPE_OUT:
-      updateWipeOut_step(seg, arr);
+      updateWipeOut_step(seg,arr);
       break;
   }
 }
 
-void updateAllStepSegments() {
-  for (int i=0; i<gBrojStepenica; i++){
-    updateSegment(stepsArray[i], ledsUp);
+void updateAllStepSegments(){
+  for(int i=0;i<gBrojStepenica;i++){
+    updateSegment(stepsArray[i],ledsUp);
   }
 }
 
 // ====================================================================
 // SEQ - FORWARD/REVERSE
 // ====================================================================
-void startSequence(bool forward) {
-  seqActive     = true;
-  seqForward    = forward;
-  seqState      = 0;
-  seqWaitStart  = 0;
+void startSequence(bool forward){
+  seqActive= true;
+  seqForward= forward;
+  seqState= 0;
+  seqWaitStart=0;
 
-  if (forward) {
-    seqCurrentStep = 0;
+  if(forward){
+    seqCurrentStep= 0;
   } else {
-    seqCurrentStep = gBrojStepenica - 1;
+    seqCurrentStep= gBrojStepenica - 1;
   }
-  for(int i=0; i<gBrojStepenica; i++){
-    stepsArray[i].state      = TrackState::OFF;
-    stepsArray[i].step       = 0;
-    stepsArray[i].lastUpdate = millis();
+  for(int i=0;i<gBrojStepenica;i++){
+    stepsArray[i].state=TrackState::OFF;
+    stepsArray[i].step=0;
+    stepsArray[i].lastUpdate= millis();
+    // Kad se sekvenca pokrene, brišemo staru logiku wipeOut i sl.
   }
 }
 
 // 
-// KLJUČNA PROMJENA: U WipeOut fazi radimo "return" nakon obrade
-// kako ne bismo preskočili "postepeno gašenje" ostalih stepenica.
-//
-void updateSequence() {
-  if (!seqActive) return;
+// U "sequence" modu, SVE stepenice ostaju u EFFECT dok "onTime" ne istekne
+// i tek onda prelazimo u wipeOut, JEDNA za drugom.
+// 
+void updateSequence(){
+  if(!seqActive) return;
 
-  // 0: WipeIn jedne po jedne
-  if (seqState == 0) {
-    if (seqForward) {
-      if (seqCurrentStep < gBrojStepenica) {
-        if (stepsArray[seqCurrentStep].state == TrackState::OFF) {
-          stepsArray[seqCurrentStep].state = TrackState::WIPE_IN;
-          stepsArray[seqCurrentStep].step  = 0;
-          stepsArray[seqCurrentStep].lastUpdate = millis();
+  // 0) WipeIn
+  if(seqState==0){
+    if(seqForward){
+      if(seqCurrentStep < gBrojStepenica){
+        if(stepsArray[seqCurrentStep].state==TrackState::OFF){
+          stepsArray[seqCurrentStep].state=TrackState::WIPE_IN;
+          stepsArray[seqCurrentStep].step=0;
+          stepsArray[seqCurrentStep].lastUpdate=millis();
         }
-        updateSegment(stepsArray[seqCurrentStep], ledsUp);
-        if (stepsArray[seqCurrentStep].state == TrackState::EFFECT) {
+        updateSegment(stepsArray[seqCurrentStep],ledsUp);
+        if(stepsArray[seqCurrentStep].state==TrackState::EFFECT){
           seqCurrentStep++;
         }
       } else {
-        seqState = 1;
-        seqWaitStart = millis();
+        seqState=1;
+        seqWaitStart=millis();
       }
     } else {
-      if (seqCurrentStep >= 0) {
-        if (stepsArray[seqCurrentStep].state == TrackState::OFF) {
-          stepsArray[seqCurrentStep].state = TrackState::WIPE_IN;
-          stepsArray[seqCurrentStep].step  = 0;
-          stepsArray[seqCurrentStep].lastUpdate = millis();
+      if(seqCurrentStep >= 0){
+        if(stepsArray[seqCurrentStep].state==TrackState::OFF){
+          stepsArray[seqCurrentStep].state=TrackState::WIPE_IN;
+          stepsArray[seqCurrentStep].step=0;
+          stepsArray[seqCurrentStep].lastUpdate=millis();
         }
-        updateSegment(stepsArray[seqCurrentStep], ledsUp);
-        if (stepsArray[seqCurrentStep].state == TrackState::EFFECT) {
+        updateSegment(stepsArray[seqCurrentStep],ledsUp);
+        if(stepsArray[seqCurrentStep].state==TrackState::EFFECT){
           seqCurrentStep--;
         }
       } else {
-        seqState = 1;
-        seqWaitStart = millis();
+        seqState=1;
+        seqWaitStart=millis();
       }
     }
   }
-  // 1: onTimeSec - čekaj dok ne istekne
-  else if (seqState == 1) {
-    if ((millis() - seqWaitStart) >= (gOnTimeSec * 1000UL)) {
-      seqState = 2;
-      // Postavi polazište za WipeOut: suprotno od WipeIn
-      if (seqForward) {
-        seqCurrentStep = gBrojStepenica - 1;
-      } else {
-        seqCurrentStep = 0;
-      }
+  // 1) effect wait
+  else if(seqState==1){
+    // Dok čekamo onTimeSec, SVE stepenice su EFFECT
+    unsigned long now= millis();
+    if((now - seqWaitStart)>=(gOnTimeSec*1000UL)){
+      seqState=2;
+      // Sada prelazimo u wipeOut, suprotno od wipeIn
+      if(seqForward) seqCurrentStep= gBrojStepenica -1;
+      else           seqCurrentStep= 0;
     } else {
-      // Dok čekamo, segmenti su i dalje u EFFECT
-      for(int i=0; i<gBrojStepenica; i++){
-        if (stepsArray[i].state == TrackState::EFFECT) {
-          updateSegment(stepsArray[i], ledsUp);
+      // Održavamo "EFFECT" na svakoj
+      for(int i=0;i<gBrojStepenica;i++){
+        if(stepsArray[i].state==TrackState::EFFECT){
+          updateSegment(stepsArray[i],ledsUp);
         }
       }
     }
   }
-  // 2: WipeOut jedne po jedne, u suprotnom smjeru
-  else if (seqState == 2) {
-    if (seqForward) {
-      if (seqCurrentStep >= 0) {
-        // Ako je step u EFFECT, prebaci ga u WIPE_OUT
-        if (stepsArray[seqCurrentStep].state == TrackState::EFFECT) {
-          stepsArray[seqCurrentStep].state = TrackState::WIPE_OUT;
-          stepsArray[seqCurrentStep].step  = 0;
-          stepsArray[seqCurrentStep].lastUpdate = millis();
+  // 2) WipeOut
+  else if(seqState==2){
+    if(seqForward){
+      // Gasimo unatrag (npr. stepenica 2 -> 1 -> 0)
+      if(seqCurrentStep>=0){
+        if(stepsArray[seqCurrentStep].state==TrackState::EFFECT){
+          stepsArray[seqCurrentStep].state=TrackState::WIPE_OUT;
+          stepsArray[seqCurrentStep].step=0;
+          stepsArray[seqCurrentStep].lastUpdate=millis();
         }
-        updateSegment(stepsArray[seqCurrentStep], ledsUp);
+        updateSegment(stepsArray[seqCurrentStep],ledsUp);
 
-        // Čim je OFF, idemo na sljedeću stepenicu
-        if (stepsArray[seqCurrentStep].state == TrackState::OFF) {
+        if(stepsArray[seqCurrentStep].state==TrackState::OFF){
           seqCurrentStep--;
         } else {
-          // Ostanemo na istoj stepenici dok se ne ugasi
+          // Dok god ova stepenica nije OFF, ostajemo
           return;
         }
       } else {
-        seqActive = false;
+        seqActive=false;
       }
     } else {
-      if (seqCurrentStep < gBrojStepenica) {
-        if (stepsArray[seqCurrentStep].state == TrackState::EFFECT) {
-          stepsArray[seqCurrentStep].state = TrackState::WIPE_OUT;
-          stepsArray[seqCurrentStep].step  = 0;
-          stepsArray[seqCurrentStep].lastUpdate = millis();
+      // Gasimo u smjeru naprijed (0->1->2..)
+      if(seqCurrentStep< gBrojStepenica){
+        if(stepsArray[seqCurrentStep].state==TrackState::EFFECT){
+          stepsArray[seqCurrentStep].state=TrackState::WIPE_OUT;
+          stepsArray[seqCurrentStep].step=0;
+          stepsArray[seqCurrentStep].lastUpdate=millis();
         }
-        updateSegment(stepsArray[seqCurrentStep], ledsUp);
+        updateSegment(stepsArray[seqCurrentStep],ledsUp);
 
-        if (stepsArray[seqCurrentStep].state == TrackState::OFF) {
+        if(stepsArray[seqCurrentStep].state==TrackState::OFF){
           seqCurrentStep++;
         } else {
-          // Bitno: zaustavi se dok ova stepenica ne završi gašenje
           return;
         }
       } else {
-        seqActive = false;
+        seqActive=false;
       }
     }
   }
@@ -732,98 +728,97 @@ void updateSequence() {
 // ====================================================================
 // REINIT
 // ====================================================================
-void reinitializeSetup() {
-  if (ledsUp)   { delete[] ledsUp;   ledsUp   = nullptr; }
-  if (ledsDown) { delete[] ledsDown; ledsDown = nullptr; }
-  if (stepsArray){ delete[] stepsArray; stepsArray=nullptr; }
-
+void reinitializeSetup(){
+  if(ledsUp) { delete[] ledsUp; ledsUp=nullptr; }
+  if(ledsDown){delete[] ledsDown; ledsDown=nullptr;}
+  if(stepsArray){delete[] stepsArray; stepsArray=nullptr;}
   FastLED.clear(true);
 
-  if (gInstallationType == "linija") {
-    if (gEnableLed1) {
-      ledsUp = new CRGB[gNumLedsUp];
-      FastLED.addLeds<WS2812B, LED_PIN_UP, GRB>(ledsUp, gNumLedsUp);
+  if(gInstallationType=="linija"){
+    if(gEnableLed1){
+      ledsUp= new CRGB[gNumLedsUp];
+      FastLED.addLeds<WS2812B,LED_PIN_UP,GRB>(ledsUp,gNumLedsUp);
     }
-    if (gEnableLed2) {
-      ledsDown = new CRGB[gNumLedsDown];
-      FastLED.addLeds<WS2812B, LED_PIN_DOWN, GRB>(ledsDown, gNumLedsDown);
+    if(gEnableLed2){
+      ledsDown= new CRGB[gNumLedsDown];
+      FastLED.addLeds<WS2812B,LED_PIN_DOWN,GRB>(ledsDown,gNumLedsDown);
     }
   } else {
     initStepSegments();
   }
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxCurrent);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5,gMaxCurrent);
 }
 
 // ====================================================================
 // IR Senzori - LINIJA
 // ====================================================================
-void handleIrSensors_linija() {
-  unsigned long now = millis();
-  int r1 = digitalRead(IR1_PIN);
-  int r2 = digitalRead(IR2_PIN);
-  int r3 = digitalRead(IR3_PIN);
-  int r4 = digitalRead(IR4_PIN);
+void handleIrSensors_linija(){
+  unsigned long now=millis();
+  int r1=digitalRead(IR1_PIN);
+  int r2=digitalRead(IR2_PIN);
+  int r3=digitalRead(IR3_PIN);
+  int r4=digitalRead(IR4_PIN);
 
-  if (gEnableLed1 && ledsUp) {
-    if (r1 == LOW && (now - gIrLast[0] > IR_DEBOUNCE)) {
-      gIrLast[0] = now;
-      if (trackUp.state == TrackState::OFF) {
-        if (gWipeAll) {
-          trackUp.state = TrackState::WIPE_IN;
-          trackUp.reverse = false;
-          trackUp.lastUpdate = now;
-          trackUp.step = 0;
-          trackUp.effectStartTime = 0;
+  if(gEnableLed1 && ledsUp){
+    if(r1==LOW && (now-gIrLast[0]>IR_DEBOUNCE)){
+      gIrLast[0]=now;
+      if(trackUp.state==TrackState::OFF){
+        if(gWipeAll){
+          trackUp.state=TrackState::WIPE_IN;
+          trackUp.reverse=false;
+          trackUp.lastUpdate= now;
+          trackUp.step=0;
+          trackUp.effectStartTime=0;
         } else {
-          trackUp.state = TrackState::EFFECT;
-          trackUp.effectStartTime = now;
+          trackUp.state=TrackState::EFFECT;
+          trackUp.effectStartTime=now;
         }
       }
     }
-    if (r2 == LOW && (now - gIrLast[1] > IR_DEBOUNCE)) {
-      gIrLast[1] = now;
-      if (trackUp.state == TrackState::OFF) {
-        if (gWipeAll) {
-          trackUp.state = TrackState::WIPE_IN;
-          trackUp.reverse = true;
-          trackUp.lastUpdate = now;
-          trackUp.step = 0;
-          trackUp.effectStartTime = 0;
+    if(r2==LOW && (now-gIrLast[1]>IR_DEBOUNCE)){
+      gIrLast[1]=now;
+      if(trackUp.state==TrackState::OFF){
+        if(gWipeAll){
+          trackUp.state=TrackState::WIPE_IN;
+          trackUp.reverse=true;
+          trackUp.lastUpdate= now;
+          trackUp.step=0;
+          trackUp.effectStartTime=0;
         } else {
-          trackUp.state = TrackState::EFFECT;
-          trackUp.effectStartTime = now;
+          trackUp.state=TrackState::EFFECT;
+          trackUp.effectStartTime=now;
         }
       }
     }
   }
-  if (gEnableLed2 && ledsDown) {
-    if (r3 == LOW && (now - gIrLast[2] > IR_DEBOUNCE)) {
-      gIrLast[2] = now;
-      if (trackDown.state == TrackState::OFF) {
-        if (gWipeAll) {
-          trackDown.state = TrackState::WIPE_IN;
-          trackDown.reverse = false;
-          trackDown.lastUpdate = now;
-          trackDown.step = 0;
-          trackDown.effectStartTime = 0;
+  if(gEnableLed2 && ledsDown){
+    if(r3==LOW && (now-gIrLast[2]>IR_DEBOUNCE)){
+      gIrLast[2]=now;
+      if(trackDown.state==TrackState::OFF){
+        if(gWipeAll){
+          trackDown.state=TrackState::WIPE_IN;
+          trackDown.reverse=false;
+          trackDown.lastUpdate= now;
+          trackDown.step=0;
+          trackDown.effectStartTime=0;
         } else {
-          trackDown.state = TrackState::EFFECT;
-          trackDown.effectStartTime = now;
+          trackDown.state=TrackState::EFFECT;
+          trackDown.effectStartTime=now;
         }
       }
     }
-    if (r4 == LOW && (now - gIrLast[3] > IR_DEBOUNCE)) {
-      gIrLast[3] = now;
-      if (trackDown.state == TrackState::OFF) {
-        if (gWipeAll) {
-          trackDown.state = TrackState::WIPE_IN;
-          trackDown.reverse = true;
-          trackDown.lastUpdate = now;
-          trackDown.step = 0;
-          trackDown.effectStartTime = 0;
+    if(r4==LOW && (now-gIrLast[3]>IR_DEBOUNCE)){
+      gIrLast[3]=now;
+      if(trackDown.state==TrackState::OFF){
+        if(gWipeAll){
+          trackDown.state=TrackState::WIPE_IN;
+          trackDown.reverse=true;
+          trackDown.lastUpdate= now;
+          trackDown.step=0;
+          trackDown.effectStartTime=0;
         } else {
-          trackDown.state = TrackState::EFFECT;
-          trackDown.effectStartTime = now;
+          trackDown.state=TrackState::EFFECT;
+          trackDown.effectStartTime=now;
         }
       }
     }
@@ -833,67 +828,67 @@ void handleIrSensors_linija() {
 // ====================================================================
 // IR Senzori - STEPENICA
 // ====================================================================
-void handleIrSensors_stepenica() {
-  unsigned long now = millis();
-  int r1 = digitalRead(IR1_PIN);
-  int r2 = digitalRead(IR2_PIN);
-  int r3 = digitalRead(IR3_PIN);
-  int r4 = digitalRead(IR4_PIN);
+void handleIrSensors_stepenica(){
+  unsigned long now=millis();
+  int r1=digitalRead(IR1_PIN);
+  int r2=digitalRead(IR2_PIN);
+  int r3=digitalRead(IR3_PIN);
+  int r4=digitalRead(IR4_PIN);
 
-  if (gEnableLed1) {
-    if (r1 == LOW && (now - gIrLast[0] > IR_DEBOUNCE)) {
-      gIrLast[0] = now;
-      if (gStepeniceMode == "sequence") {
-        if (!seqActive) startSequence(true);
+  if(gEnableLed1){
+    if(r1==LOW && (now-gIrLast[0]>IR_DEBOUNCE)){
+      gIrLast[0]=now;
+      if(gStepeniceMode=="sequence"){
+        if(!seqActive) startSequence(true);
       } else {
-        for (int i=0; i<gBrojStepenica; i++){
-          if (stepsArray[i].state == TrackState::OFF) {
-            stepsArray[i].state = gWipeAll ? TrackState::WIPE_IN : TrackState::EFFECT;
-            stepsArray[i].step  = 0;
+        for(int i=0;i<gBrojStepenica;i++){
+          if(stepsArray[i].state==TrackState::OFF){
+            stepsArray[i].state= gWipeAll? TrackState::WIPE_IN: TrackState::EFFECT;
+            stepsArray[i].step=0;
             stepsArray[i].lastUpdate=millis();
           }
         }
       }
     }
-    if (r2 == LOW && (now - gIrLast[1] > IR_DEBOUNCE)) {
-      gIrLast[1] = now;
-      if (gStepeniceMode == "sequence") {
-        if (!seqActive) startSequence(false);
+    if(r2==LOW && (now-gIrLast[1]>IR_DEBOUNCE)){
+      gIrLast[1]=now;
+      if(gStepeniceMode=="sequence"){
+        if(!seqActive) startSequence(false);
       } else {
-        for (int i=0; i<gBrojStepenica; i++){
-          if (stepsArray[i].state == TrackState::OFF) {
-            stepsArray[i].state = gWipeAll ? TrackState::WIPE_IN : TrackState::EFFECT;
-            stepsArray[i].step  = 0;
+        for(int i=0;i<gBrojStepenica;i++){
+          if(stepsArray[i].state==TrackState::OFF){
+            stepsArray[i].state= gWipeAll? TrackState::WIPE_IN: TrackState::EFFECT;
+            stepsArray[i].step=0;
             stepsArray[i].lastUpdate=millis();
           }
         }
       }
     }
   }
-  if (gEnableLed2) {
-    if (r3 == LOW && (now - gIrLast[2] > IR_DEBOUNCE)) {
-      gIrLast[2] = now;
-      if (gStepeniceMode == "sequence") {
-        if (!seqActive) startSequence(true);
+  if(gEnableLed2){
+    if(r3==LOW && (now-gIrLast[2]>IR_DEBOUNCE)){
+      gIrLast[2]=now;
+      if(gStepeniceMode=="sequence"){
+        if(!seqActive) startSequence(true);
       } else {
-        for (int i=0; i<gBrojStepenica; i++){
-          if (stepsArray[i].state == TrackState::OFF) {
-            stepsArray[i].state = gWipeAll ? TrackState::WIPE_IN : TrackState::EFFECT;
-            stepsArray[i].step  = 0;
+        for(int i=0;i<gBrojStepenica;i++){
+          if(stepsArray[i].state==TrackState::OFF){
+            stepsArray[i].state= gWipeAll? TrackState::WIPE_IN: TrackState::EFFECT;
+            stepsArray[i].step=0;
             stepsArray[i].lastUpdate=millis();
           }
         }
       }
     }
-    if (r4 == LOW && (now - gIrLast[3] > IR_DEBOUNCE)) {
-      gIrLast[3] = now;
-      if (gStepeniceMode == "sequence") {
-        if (!seqActive) startSequence(false);
+    if(r4==LOW && (now-gIrLast[3]>IR_DEBOUNCE)){
+      gIrLast[3]=now;
+      if(gStepeniceMode=="sequence"){
+        if(!seqActive) startSequence(false);
       } else {
-        for (int i=0; i<gBrojStepenica; i++){
-          if (stepsArray[i].state == TrackState::OFF) {
-            stepsArray[i].state = gWipeAll ? TrackState::WIPE_IN : TrackState::EFFECT;
-            stepsArray[i].step  = 0;
+        for(int i=0;i<gBrojStepenica;i++){
+          if(stepsArray[i].state==TrackState::OFF){
+            stepsArray[i].state= gWipeAll? TrackState::WIPE_IN: TrackState::EFFECT;
+            stepsArray[i].step=0;
             stepsArray[i].lastUpdate=millis();
           }
         }
@@ -903,10 +898,10 @@ void handleIrSensors_stepenica() {
 }
 
 // ====================================================================
-// GLAVNA handleIrSensors
+// IR Sensors
 // ====================================================================
-void handleIrSensors() {
-  if (gInstallationType=="linija") {
+void handleIrSensors(){
+  if(gInstallationType=="linija"){
     handleIrSensors_linija();
   } else {
     handleIrSensors_stepenica();
@@ -916,80 +911,81 @@ void handleIrSensors() {
 // ====================================================================
 // RUTE
 // ====================================================================
-void setupRoutes() {
-  server.on("/", HTTP_GET, [](){
-    if (!handleFileRead("/index.html")) {
-      server.send(404, "text/plain","Not found");
+void setupRoutes(){
+  server.on("/",HTTP_GET,[](){
+    if(!handleFileRead("/index.html")){
+      server.send(404,"text/plain","Not found");
     }
   });
   server.onNotFound(handleNotFound);
 
-  server.on("/api/getConfig", HTTP_GET, [](){
+  server.on("/api/getConfig",HTTP_GET,[](){
     StaticJsonDocument<1024> doc;
-    doc["ledsUp"]    = gNumLedsUp;
-    doc["ledsDown"]  = gNumLedsDown;
-    doc["maxCur"]    = gMaxCurrent;
-    doc["effect"]    = gEffect;
-    doc["wipeAll"]   = gWipeAll;
-    doc["speed"]     = gWipeInSpeedMs;   // nastavimo slati stari "speed" kao WipeIn
-    doc["onTime"]    = gOnTimeSec;
-    doc["colorR"]    = gColorR;
-    doc["colorG"]    = gColorG;
-    doc["colorB"]    = gColorB;
+    doc["ledsUp"]   = gNumLedsUp;
+    doc["ledsDown"] = gNumLedsDown;
+    doc["maxCur"]   = gMaxCurrent;
+    doc["effect"]   = gEffect;
+    doc["wipeAll"]  = gWipeAll;
+    doc["speed"]    = gWipeInSpeedMs;  
+    doc["onTime"]   = gOnTimeSec;
+    doc["colorR"]   = gColorR;
+    doc["colorG"]   = gColorG;
+    doc["colorB"]   = gColorB;
     doc["enableLed1"]= gEnableLed1;
     doc["enableLed2"]= gEnableLed2;
-    doc["installationType"] = gInstallationType;
-    doc["brojStepenica"]    = gBrojStepenica;
-    doc["brojLedicaPoStepenici"] = gBrojLedicaPoStepenici;
-    doc["efektKreniOd"]     = gEfektKreniOd;
-    doc["rotacijaStepenica"]= gRotacijaStepenica;
-    doc["stepMode"]         = gStepeniceMode;
-    doc["dayStart"]         = gDayStartStr;
-    doc["dayEnd"]           = gDayEndStr;
-    doc["dayBr"]            = gDayBrightnessPercent;
-    doc["nightBr"]          = gNightBrightnessPercent;
+    doc["installationType"]= gInstallationType;
+    doc["brojStepenica"]= gBrojStepenica;
+    doc["brojLedicaPoStepenici"]= gBrojLedicaPoStepenici;
+    doc["efektKreniOd"]= gEfektKreniOd;
+    doc["rotacijaStepenica"]= gRotacijaStepenica; // paziti, možda tipfeler
+    doc["stepMode"] = gStepeniceMode;
+    doc["dayStart"] = gDayStartStr;
+    doc["dayEnd"]   = gDayEndStr;
+    doc["dayBr"]    = gDayBrightnessPercent;
+    doc["nightBr"]  = gNightBrightnessPercent;
+
     String out;
     serializeJson(doc,out);
-    server.send(200,"application/json", out);
+    server.send(200,"application/json",out);
   });
 
-  server.on("/api/saveConfig", HTTP_POST, [](){
-    if (!server.hasArg("plain")) {
+  server.on("/api/saveConfig",HTTP_POST,[](){
+    if(!server.hasArg("plain")){
       server.send(400,"application/json","{\"status\":\"error\"}");
       return;
     }
-    String body = server.arg("plain");
+    String body= server.arg("plain");
     StaticJsonDocument<1024> doc;
-    auto err= deserializeJson(doc, body);
-    if (err) {
+    auto err= deserializeJson(doc,body);
+    if(err){
       server.send(400,"application/json","{\"status\":\"error\"}");
       return;
     }
-    gWipeAll          = doc["wipeAll"]           | gWipeAll;
-    uint16_t newSpeed = doc["speed"]            | gWipeInSpeedMs;
-    gWipeInSpeedMs    = newSpeed;
-    // ostavljamo gWipeOutSpeedMs = fiksno 80 (ili postavi doc["wipeOutSpeed"] ako želiš)
+    gWipeAll= doc["wipeAll"] | gWipeAll;
+    uint16_t newSpeed= doc["speed"] | gWipeInSpeedMs;
+    gWipeInSpeedMs= newSpeed;
+    // gWipeOutSpeedMs je fiksni, ili doc["wipeOutSpeed"] ako želiš i to prilagoditi
 
-    gOnTimeSec        = doc["onTime"]           | gOnTimeSec;
-    gEffect           = doc["effect"]           | gEffect;
-    gColorR           = doc["colorR"]           | gColorR;
-    gColorG           = doc["colorG"]           | gColorG;
-    gColorB           = doc["colorB"]           | gColorB;
-    gEnableLed1       = doc["enableLed1"]       | gEnableLed1;
-    gEnableLed2       = doc["enableLed2"]       | gEnableLed2;
-    gInstallationType = doc["installationType"] | gInstallationType;
-    gNumLedsUp        = doc["ledsUp"]           | gNumLedsUp;
-    gNumLedsDown      = doc["ledsDown"]         | gNumLedsDown;
-    gBrojStepenica    = doc["brojStepenica"]    | gBrojStepenica;
-    gBrojLedicaPoStepenici = doc["brojLedicaPoStepenici"] | gBrojLedicaPoStepenici;
-    gEfektKreniOd     = doc["efektKreniOd"]     | gEfektKreniOd;
-    gRotacijaStepenica= doc["rotacijaStepenica"]| gRotacijaStepenica;
-    gStepeniceMode    = doc["stepMode"]         | gStepeniceMode;
-    gMaxCurrent       = doc["maxCur"]           | gMaxCurrent;
-    gDayStartStr      = doc["dayStart"]         | gDayStartStr;
-    gDayEndStr        = doc["dayEnd"]           | gDayEndStr;
-    gDayBrightnessPercent = doc["dayBr"]        | gDayBrightnessPercent;
-    gNightBrightnessPercent= doc["nightBr"]     | gNightBrightnessPercent;
+    gOnTimeSec= doc["onTime"] | gOnTimeSec;
+    gEffect= doc["effect"] | gEffect;
+    gColorR= doc["colorR"] | gColorR;
+    gColorG= doc["colorG"] | gColorG;
+    gColorB= doc["colorB"] | gColorB;
+    gEnableLed1= doc["enableLed1"] | gEnableLed1;
+    gEnableLed2= doc["enableLed2"] | gEnableLed2;
+    gInstallationType= doc["installationType"] | gInstallationType;
+    gNumLedsUp= doc["ledsUp"] | gNumLedsUp;
+    gNumLedsDown= doc["ledsDown"] | gNumLedsDown;
+    gBrojStepenica= doc["brojStepenica"] | gBrojStepenica;
+    gBrojLedicaPoStepenici= doc["brojLedicaPoStepenici"] | gBrojLedicaPoStepenici;
+    gEfektKreniOd= doc["efektKreniOd"] | gEfektKreniOd;
+    gRotacijaStepenica= doc["rotacijaStepenica"] | gRotacijaStepenica;
+    gStepeniceMode= doc["stepMode"] | gStepeniceMode;
+    gMaxCurrent= doc["maxCur"] | gMaxCurrent;
+    gDayStartStr= doc["dayStart"] | gDayStartStr;
+    gDayEndStr= doc["dayEnd"] | gDayEndStr;
+    gDayBrightnessPercent= doc["dayBr"] | gDayBrightnessPercent;
+    gNightBrightnessPercent= doc["nightBr"] | gNightBrightnessPercent;
 
     savePreferences();
     reinitializeSetup();
@@ -1000,12 +996,12 @@ void setupRoutes() {
 // ====================================================================
 // SETUP & LOOP
 // ====================================================================
-void setup() {
-  pinMode(PUSH_BUTTON_PIN, INPUT_PULLUP);
-  pinMode(IR1_PIN, INPUT_PULLUP);
-  pinMode(IR2_PIN, INPUT_PULLUP);
-  pinMode(IR3_PIN, INPUT_PULLUP);
-  pinMode(IR4_PIN, INPUT_PULLUP);
+void setup(){
+  pinMode(PUSH_BUTTON_PIN,INPUT_PULLUP);
+  pinMode(IR1_PIN,INPUT_PULLUP);
+  pinMode(IR2_PIN,INPUT_PULLUP);
+  pinMode(IR3_PIN,INPUT_PULLUP);
+  pinMode(IR4_PIN,INPUT_PULLUP);
 
   Serial.begin(115200);
   delay(200);
@@ -1016,57 +1012,59 @@ void setup() {
   setupRoutes();
   setupTime();
 
-  if (gInstallationType == "linija") {
-    if (gEnableLed1) {
-      ledsUp = new CRGB[gNumLedsUp];
-      FastLED.addLeds<WS2812B, LED_PIN_UP, GRB>(ledsUp, gNumLedsUp);
+  if(gInstallationType=="linija"){
+    if(gEnableLed1){
+      ledsUp= new CRGB[gNumLedsUp];
+      FastLED.addLeds<WS2812B,LED_PIN_UP,GRB>(ledsUp,gNumLedsUp);
     }
-    if (gEnableLed2) {
-      ledsDown = new CRGB[gNumLedsDown];
-      FastLED.addLeds<WS2812B, LED_PIN_DOWN, GRB>(ledsDown, gNumLedsDown);
+    if(gEnableLed2){
+      ledsDown= new CRGB[gNumLedsDown];
+      FastLED.addLeds<WS2812B,LED_PIN_DOWN,GRB>(ledsDown,gNumLedsDown);
     }
   } else {
     initStepSegments();
   }
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, gMaxCurrent);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5,gMaxCurrent);
   server.begin();
 
-  esp_task_wdt_config_t wdt_config = {
-    .timeout_ms = 5000,
-    .idle_core_mask = 0,
-    .trigger_panic = true
+  esp_task_wdt_config_t wdt_config={
+    .timeout_ms=5000,
+    .idle_core_mask=0,
+    .trigger_panic=true
   };
   esp_task_wdt_init(&wdt_config);
   esp_task_wdt_add(NULL);
 }
 
-void loop() {
+void loop(){
   server.handleClient();
   handlePushButton();
 
-  if (!gManualOnOff) {
+  if(!gManualOnOff){
     handleIrSensors();
-    if (gInstallationType=="stepenica" && gEnableLed1) {
-      if (gStepeniceMode=="sequence") {
+
+    if(gInstallationType=="stepenica" && gEnableLed1){
+      if(gStepeniceMode=="sequence"){
         updateSequence();
       } else {
         updateAllStepSegments();
       }
-    } else if (gInstallationType=="linija") {
-      if (gEnableLed1 && ledsUp) {
-        updateTrack_line(trackUp, ledsUp, gNumLedsUp, true);
+    } else if(gInstallationType=="linija"){
+      if(gEnableLed1 && ledsUp){
+        updateTrack_line(trackUp,ledsUp,gNumLedsUp,true);
       }
-      if (gEnableLed2 && ledsDown) {
-        updateTrack_line(trackDown, ledsDown, gNumLedsDown, false);
+      if(gEnableLed2 && ledsDown){
+        updateTrack_line(trackDown,ledsDown,gNumLedsDown,false);
       }
     }
   } else {
-    if (gInstallationType=="linija") {
-      if (gEnableLed1 && ledsUp)   applyGlobalEffect(ledsUp,   gNumLedsUp, true);
-      if (gEnableLed2 && ledsDown) applyGlobalEffect(ledsDown, gNumLedsDown, false);
+    // Manual ON
+    if(gInstallationType=="linija"){
+      if(gEnableLed1 && ledsUp)   applyGlobalEffect(ledsUp,  gNumLedsUp,true);
+      if(gEnableLed2 && ledsDown) applyGlobalEffect(ledsDown,gNumLedsDown,false);
     } else {
-      if (gEnableLed1 && ledsUp) {
-        applyGlobalEffect(ledsUp, gTotalLedsStepenice, true);
+      if(gEnableLed1 && ledsUp){
+        applyGlobalEffect(ledsUp,gTotalLedsStepenice,true);
       }
     }
   }
